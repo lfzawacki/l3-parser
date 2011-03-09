@@ -1,0 +1,11 @@
+skip;
+if false then
+    4
+else
+    3
+end;
+
+while x := 3 do
+    x := x + 2
+end
+

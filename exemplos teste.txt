@@ -1,0 +1,17 @@
+let rec foo : int -> int = 
+		fn x : int => 	if 0 <= x then
+								0 
+							else 
+								x + foo(x - 1) 
+							end 
+in 
+	f(10)
+end
+
+let x : int = 10 in 
+	s := ref 0; 
+	while 0 <= x do 
+		s := !s + x 
+	end
+end
+
