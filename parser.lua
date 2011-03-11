@@ -22,10 +22,10 @@ local b = C( P"true" + P"false" * space) / function (x) return 'B(' .. x .. ')' 
 local skip = C( P "skip" * space) / function (x) return 'Skip(' .. x .. ')' end
 
 
-local op =  C( S "+-*<>" * space)
-local unop = C( ( P "!" + P "ref") * space )
+local op =  C( S"+-*<>" * space)
+local unop = C( ( P"!" + P"ref") * space )
 
-local longops = C( ( P("==") + P("!=") + P("<=") + P(">=") + P(":=") ) * space)
+local longops = C( ( P"==" + P"!=" + P"<=" + P">=" + P":=" ) * space)
 
 -- variables
 local Expr = V "Expr"
