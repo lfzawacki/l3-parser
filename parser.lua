@@ -8,41 +8,59 @@ local function sanitize (str)
         return str
     end
 
-    return (string.gsub(str,"[ \n\t]",""))
+    local ret = string.gsub(str,"[ \n\t]","")
+	return ret
+end
+
+-- returns a function that wraps text with token
+-- like this "token(text)"
+local function wrap (token)
+	return function (text)
+		return token .. '(' .. text .. ')'
+	end
 end
 
 local space = S(" \n\t")^0
 
-local primitive_types = P("int") * space +
-                        P("bool") * space +
-                        P("unit") * space
+local primitive_types = (P"int" + P"bool" + P"unit") * space
 -- values
-local n = C( P("-")^-1 * R("09")^1 * space) / function (x) return 'N(' .. x .. ')' end
-local b = C( P"true" + P"false" * space) / function (x) return 'B(' .. x .. ')' end
-local skip = C( P "skip" * space) / function (x) return 'Skip(' .. x .. ')' end
+local n = C( P("-")^-1 * R("09")^1 * space) / wrap('N')
+local b = C( P"true" + P"false" * space) / wrap('B')
+local skip = C( P "skip" * space) / wrap('Skip')
 
-
-local op =  C( S"+-*<>" * space)
+--operators
+local op =  C( S"+-*<>" * space )
 local unop = C( ( P"!" + P"ref") * space )
 
 local longops = C( ( P"==" + P"!=" + P"<=" + P">=" + P":=" ) * space)
 
+-- shortcut to add information to a capture
+local function name_capture (name)
+	return function (ct)
+		ct.name = name
+		return ct
+	end
+end
+
 -- variables
 local Expr = V "Expr"
 local Operand = V "Operand"
-local Cond = Ct( V "Cond" ) / function (ct) ct.name = 'If'; return ct end
-local Oper =  Ct( V("Oper") ) / function (ct) ct.name = 'Op'; return ct end
-local Function = Ct( V "Function" ) / function (ct) ct.name = 'Fn'; return ct end
-local Loop = Ct( V "Loop" ) / function (ct) ct.name = 'While'; return ct end
+local Cond = Ct( V "Cond" ) / name_capture('If')
+local Oper =  Ct( V "Oper" ) / name_capture('Op')
+local Function = Ct( V "Function" ) / name_capture('Fn')
+local Loop = Ct( V "Loop" ) / name_capture('While')
+
 local Value = V "Value" / sanitize
-local Type = C(lpeg.V "Type")
+local Type = C( V "Type")
 local Types = V "Types"
 local Op = V "Op" / sanitize
-local Unoper = Ct( V "Unoper" ) / function (ct) ct.name = 'Unop'; return ct end
-local VarLet = Ct( lpeg.V "VarLet" ) / function (ct) ct.name = 'Let'; return ct end
-local VarLetRec = Ct( lpeg.V "VarLetRec") / function (ct) ct.name = 'LetRec'; return ct end
-local SeqExpr = Ct(lpeg.V "SeqExpr") / function (ct) ct.name = 'Seq'; return ct end
-local App = Ct( V "App" ) / function (ct) ct.name = 'App'; return ct end
+
+local Unoper = Ct( V "Unoper" ) / name_capture('Unop')
+local VarLet = Ct( V "VarLet" ) / name_capture('Let')
+local VarLetRec = Ct( V "VarLetRec" ) / name_capture('LetRec')
+local SeqExpr = Ct( V "SeqExpr" ) / name_capture('Seq')
+local App = Ct( V "App" ) / name_capture('App')
+
 local open = P "(" * space
 local close = P ")" * space
 
@@ -64,16 +82,16 @@ local Colon = P ":" * space
 local Arrow = P "->" * space
 local FArrow = P "=>" * space
 
-local Keywords = If + Then + Else + While + Do + Let +
-                 LetRec + Fn + In +
-                 End + skip + b + lpeg.P "ref"
+local Keywords = ( If + Then + Else + While + Do + Let +
+                 LetRec + Fn + In + End + skip + b + P "ref" ) * space
 
 
 local varname = C(
                     (
                         ( R"AZ" + R"az" ) * ( R("09") +
-                        ( R"AZ" + R"az" ) )^0 - Keywords) * space
-                    ) / function (x) return 'X("' .. sanitize(x) .. '")' end
+                        ( R"AZ" + R"az" ) )^0 - Keywords
+                    ) * space
+                  ) / wrap('X')
 
 l3 = P {
 
@@ -201,11 +219,9 @@ local function toTree(t)
                 result = result .. toTree(t[i]) .. ','
             else
                 result = result .. toTree(t[i]) .. ')'
-                --tail = tail .. ')'
             end
 
         end
-        result = result --.. tail
     end
 
     return result
