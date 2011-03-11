@@ -23,6 +23,7 @@ end
 local space = S(" \n\t")^0
 
 local primitive_types = (P"int" + P"bool" + P"unit") * space
+
 -- values
 local n = C( P("-")^-1 * R("09")^1 * space) / wrap('N')
 local b = C( P"true" + P"false" * space) / wrap('B')
